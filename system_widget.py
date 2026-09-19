@@ -6,6 +6,10 @@ Widget minimalista para monitoreo del sistema:
 - VRAM usage (NVIDIA GPU)
 - FPS (estimado basado en refresh rate)
 - Red (banda ancha)
+
+Opciones de línea de comandos:
+--install-startup: Registrar para inicio automático con Windows
+--uninstall-startup: Eliminar del inicio automático
 """
 
 import tkinter as tk
@@ -13,6 +17,9 @@ from tkinter import font
 import psutil
 import time
 import threading
+import sys
+import os
+import argparse
 
 try:
     import pynvml
@@ -21,8 +28,71 @@ except (ImportError, Exception):
     NVML_AVAILABLE = False
 
 # Verificar si hay display disponible
-import os
 HAS_DISPLAY = os.environ.get('DISPLAY') is not None or os.name == 'nt'
+
+
+def get_startup_folder():
+    """Obtener la carpeta de inicio automático de Windows"""
+    if os.name == 'nt':
+        import winreg
+        try:
+            key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER,
+                r"Software\Microsoft\Windows\CurrentVersion\Run",
+                0,
+                winreg.KEY_ALL_ACCESS
+            )
+            return key
+        except:
+            return None
+    return None
+
+
+def install_startup(script_path):
+    """Registrar el widget para inicio automático con Windows"""
+    if os.name != 'nt':
+        print("Esta función solo está disponible en Windows")
+        return False
+    
+    key = get_startup_folder()
+    if key is None:
+        print("No se pudo acceder al registro de Windows")
+        return False
+    
+    try:
+        # Usar la ruta completa del ejecutable o script
+        exe_path = os.path.abspath(script_path)
+        winreg.SetValueEx(key, "SystemWidget", 0, winreg.REG_SZ, f'"{exe_path}"')
+        winreg.CloseKey(key)
+        print("✓ Widget registrado para inicio automático")
+        return True
+    except Exception as e:
+        print(f"Error al registrar: {e}")
+        return False
+
+
+def uninstall_startup():
+    """Eliminar el widget del inicio automático"""
+    if os.name != 'nt':
+        print("Esta función solo está disponible en Windows")
+        return False
+    
+    key = get_startup_folder()
+    if key is None:
+        print("No se pudo acceder al registro de Windows")
+        return False
+    
+    try:
+        winreg.DeleteValue(key, "SystemWidget")
+        winreg.CloseKey(key)
+        print("✓ Widget eliminado del inicio automático")
+        return True
+    except FileNotFoundError:
+        print("El widget no estaba registrado en el inicio automático")
+        return True
+    except Exception as e:
+        print(f"Error al eliminar: {e}")
+        return False
 
 
 class SystemWidget:
@@ -198,6 +268,26 @@ class SystemWidget:
 
 
 def main():
+    # Configurar parser de argumentos
+    parser = argparse.ArgumentParser(description='Widget de Monitoreo del Sistema')
+    parser.add_argument('--install-startup', action='store_true', 
+                        help='Registrar para inicio automático con Windows')
+    parser.add_argument('--uninstall-startup', action='store_true',
+                        help='Eliminar del inicio automático')
+    
+    args = parser.parse_args()
+    
+    # Manejar opciones de inicio automático
+    if args.install_startup:
+        script_path = sys.argv[0] if len(sys.argv) > 0 else os.path.abspath(__file__)
+        install_startup(script_path)
+        return
+    
+    if args.uninstall_startup:
+        uninstall_startup()
+        return
+    
+    # Verificar display y ejecutar widget
     if not HAS_DISPLAY:
         print("Error: No hay display disponible.")
         print("Este widget requiere una interfaz gráfica (X11, Windows, o macOS).")
@@ -215,6 +305,10 @@ def main():
     print("- Arrastra la ventana para moverla")
     print("- Doble clic para cerrar")
     print("- Mantén siempre visible sobre otras ventanas")
+    print("\nPara iniciar con Windows:")
+    print("  system_widget.exe --install-startup")
+    print("\nPara eliminar del inicio:")
+    print("  system_widget.exe --uninstall-startup")
     
     root.mainloop()
 

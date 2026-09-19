@@ -1,6 +1,39 @@
-Nothing should be ignored based on the provided file changes. The added files (README.md and system_widget.py) are source/config files that should be tracked in version control.node_modules/
-.next/
-dist/
-build/
+```gitignore
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+.env
+.env.local
+.env.*
+
+# Logs and temporary files
 *.log
-node_modules/
+*.tmp
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Coverage reports
+.coverage
+htmlcov/
+coverage/
+
+# MyPy cache
+.mypy_cache/
+# Pytest cache
+.pytest_cache/
+
+# Build directories
+build/
+dist/
+*.egg-info/
+```node_modules/
+.next/
