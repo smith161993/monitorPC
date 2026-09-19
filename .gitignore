@@ -3,3 +3,4 @@ Nothing should be ignored based on the provided file changes. The added files (R
 dist/
 build/
 *.log
+node_modules/
